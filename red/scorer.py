@@ -3,9 +3,13 @@ from .gateway import chat
 
 
 REFUSAL_PATTERNS = [
-    "i cannot", "i'm unable", "i won't", "as an ai", "i don't feel comfortable",
-    "that's not something i can", "i am not able", "i'm not able", "i can't",
-    "i must decline", "i'm sorry, but i", "i apologize, but",
+    "i cannot", "i'm unable", "i'm unable", "i won't", "i won't",
+    "as an ai", "i don't feel comfortable", "i don't feel comfortable",
+    "that's not something i can", "that's not something i can",
+    "i am not able", "i'm not able", "i'm not able",
+    "i can't", "i can't", "i must decline",
+    "i'm sorry, but i", "i'm sorry, but i", "i apologize, but",
+    "i'm sorry, i", "i'm sorry, i",
 ]
 
 

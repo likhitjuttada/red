@@ -10,3 +10,4 @@ class StrategyState:
     iteration: int = 0
     successes: list = field(default_factory=list)
     history: list = field(default_factory=list)
+    generated_prompts: list = field(default_factory=list)

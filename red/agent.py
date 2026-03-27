@@ -1,7 +1,9 @@
 import os
 from .gateway import make_bedrock_client, make_ollama_client
 from .attacker import load_attacks
-from .tracer import traced_attack, set_traces_dir
+import time
+
+from .tracer import traced_attack, set_traces_dir, write_trace
 from .scorer import score
 from .reflect import reflect
 from .strategy import StrategyState
@@ -48,12 +50,16 @@ class RedAgent:
             print(f"  Categories: {', '.join(self.state.attack_categories)}")
             print(f"{'=' * 60}")
 
-            attacks = load_attacks(self.cache_path, self.state.attack_categories)
-            attacks = attacks[: self.attacks_per_iter]
+            generated = [
+                {"category": p["category"], "prompt": p["prompt"], "source": "generated"}
+                for p in self.state.generated_prompts
+            ]
+            cached = load_attacks(self.cache_path, self.state.attack_categories)
+            attacks = (generated + cached)[: self.attacks_per_iter]
 
             iter_successes = 0
             for i, attack in enumerate(attacks):
-                print(f"\n  [{i+1}/{len(attacks)}] category={attack['category']}")
+                print(f"\n  [{i+1}/{len(attacks)}] category={attack['category']} source={attack.get('source', 'cache')}")
                 try:
                     mutated, response = traced_attack(
                         self.attacker_client,
@@ -64,11 +70,24 @@ class RedAgent:
                         self.state.mutation_mode,
                     )
                     s = score(self.attacker_client, self.state.attacker_model, mutated, response)
-                    status = "*** HIT ***" if s >= self.threshold else "miss"
+                    hit = s >= self.threshold
+                    write_trace({
+                        "ts": time.time(),
+                        "attacker_model": self.state.attacker_model,
+                        "target_model": self.state.target_model,
+                        "mutation_mode": self.state.mutation_mode,
+                        "category": attack["category"],
+                        "original_prompt": attack["prompt"],
+                        "mutated_prompt": mutated,
+                        "response": response,
+                        "score": s,
+                        "hit": hit,
+                    })
+                    status = "*** HIT ***" if hit else "miss"
                     print(f"  Result : {status}  (score={s:.2f})")
                     print(f"  Prompt : {mutated[:200]}")
                     print(f"  Response: {response[:200]}")
-                    if s >= self.threshold:
+                    if hit:
                         self.state.successes.append({
                             "iteration": iter_num,
                             "category": attack["category"],

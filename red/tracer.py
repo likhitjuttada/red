@@ -13,7 +13,7 @@ def set_traces_dir(path: str):
     _traces_dir = path
 
 
-def _write_trace(record: dict):
+def write_trace(record: dict):
     os.makedirs(_traces_dir, exist_ok=True)
     path = os.path.join(_traces_dir, f"{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}.json")
     with open(path, "w") as f:
@@ -56,15 +56,5 @@ def traced_attack(attacker_client, target_client, attacker_model: str, target_mo
         raise ValueError(f"Attacker model refused to mutate prompt: {mutated[:80]}")
 
     response = chat(target_client, target_model, [{"role": "user", "content": mutated}])
-
-    _write_trace({
-        "ts": time.time(),
-        "attacker_model": attacker_model,
-        "target_model": target_model,
-        "mutation_mode": mutation_mode,
-        "original_prompt": prompt,
-        "mutated_prompt": mutated,
-        "response": response,
-    })
 
     return mutated, response
